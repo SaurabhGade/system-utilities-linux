@@ -1,0 +1,105 @@
+#!/bin/bash
+loading_animation() {
+  symbols=(">" "v" "<" "^") 
+  while [ true ]; do
+    for symbol in "${symbols[@]}"; do
+      echo -ne "\r  ==$symbol "  
+      sleep 0.2  
+    done
+  done
+}
+disp_options(){
+  echo "    q to exit"
+  echo "    0 to power on"
+  echo "    1 to power off"
+  echo "    2 to show networks"
+  echo "    3 to connect" 
+  echo "    4 to show active connection"
+  echo "    h to help"
+}
+function power_on(){
+  nmcli radio wifi on
+  sleep 1
+}
+function power_off(){
+  nmcli radio wifi off
+  sleep 1
+}
+function show_networks(){
+  nets=$(nmcli d wifi | awk '{ if ($1 != "*" && $7 != "Mbit/s" ) print $7 "\t\t" $2 }')
+  IFS=$'\n'  #set internal separator to newline so not print '\n' as it is
+  for net in $nets; do
+    echo "$net"
+  done
+  sleep 1
+}
+function current_connection(){
+  nmcli d wifi | awk '{if ($1=="*") print "     "$3"     status: connected"}'
+  sleep 1
+}
+function connect(){
+  local ssid;
+  local pass;
+  local result;
+  printf "Enter ssid : "
+  read ssid
+  printf "Enter password : "
+  read pass
+  loading_animation &
+  LOADING_PID=$!
+  if [[ -z "$pass" ]]; then
+    result=$(nmcli d wifi connect "$ssid")
+  else
+    result=$(nmcli d wifi connect "$ssid" password "$pass")
+  fi
+  res=$(echo $result | awk '{print $3}')
+  if [ "$res" == "successfully" ]; then
+    printf "connected successfully to $ssid"
+  else
+    printf "cannot connect to $ssid"
+  fi
+  printf "  ==> "
+  kill $LOADING_PID
+}
+
+if [[ "$1" = "--version" || "$1" == "-v" ]]; then
+  echo "version 0.0.1"
+  exit 0
+fi
+
+echo "Enter h for help"
+
+while [ true ]; do
+  read inp 
+  if [ "$inp" = "h" ]; then
+    loading_animation & 
+    LOADING_PID=$!
+    disp_options
+    kill $LOADING_PID
+  fi
+  if [ "$inp" = "q" ]; then
+    exit 0
+  fi
+  if [ "$inp" = "0" ]; then
+    power_on
+  fi
+  if [ "$inp" = "1" ]; then
+    power_off
+  fi
+  if [ "$inp" = "2" ]; then
+    loading_animation &
+    LOADING_PID=$!
+    show_networks
+    kill $LOADING_PID
+  fi
+
+  if [ "$inp" = "3" ]; then
+    connect
+  fi
+  if [ "$inp" = "4" ]; then
+    loading_animation &
+    LOADING_PID=$!
+    current_connection
+    kill $LOADING_PID
+  fi
+done

@@ -1,0 +1,29 @@
+#!/home/saurabh/.pyenv/bin/python3
+import subprocess
+
+def get_gpu_info():
+    try:
+        # Check for Nvidia GPU using nvidia-smi
+        nvidia_info = subprocess.check_output(["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv,noheader"], 
+                                              stderr=subprocess.STDOUT, text=True).strip()
+        print("Nvidia GPU Info:")
+        print(nvidia_info)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Nvidia GPU not detected or nvidia-smi not installed.")
+
+    try:
+        # Check for other GPUs using lspci
+        lspci_output = subprocess.check_output(["lspci"], text=True).splitlines()
+        gpu_info = [line for line in lspci_output if "VGA" in line or "3D" in line]
+        if gpu_info:
+            print("\nOther GPU Info (from lspci):")
+            for gpu in gpu_info:
+                print(gpu)
+        else:
+            print("\nNo additional GPUs detected.")
+    except FileNotFoundError:
+        print("lspci not installed. Please install pciutils.")
+
+if __name__ == "__main__":
+    get_gpu_info()
+

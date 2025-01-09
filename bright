@@ -1,0 +1,34 @@
+#!/bin/sh
+brightness=$1
+first_char=$(printf "%c" "$brightness")
+
+
+# increase brightness by x percentage after +
+if [ "$first_char" = "+" ]; then
+  incr=$2       #second argument
+  current_brightness=$(brightnessctl g) #get the current brightness
+  new_brightness=$(echo "$current_brightness + $incr * 2.55" | bc) #calculate new brightness
+  if [ $(echo "$new_brightness > 255" | bc) -eq 1 ]; then
+    echo $new_brightness
+    exit 1 
+  fi
+  brightnessctl set $new_brightness
+  exit 0
+fi
+
+# decrease brightness by x percentage after +
+if [ "$first_char" = "-" ]; then
+  incr=$2       #second argument
+  current_brightness=$(brightnessctl g) #get the current brightness
+  new_brightness=$(echo "$current_brightness - $incr * 2.55" | bc) #calculate new brightness
+  if [ $(echo "$new_brightness < 0" | bc) -eq 1 ]; then   ###using bc (besic calculator) sh utility, because bash does not support floting operations
+    echo $new_brightness
+    exit 1 
+  fi
+  brightnessctl set $new_brightness
+  exit 0
+fi
+
+factor=2.55
+brightness=$(echo "$brightness * $factor" | bc);
+brightnessctl set $brightness
